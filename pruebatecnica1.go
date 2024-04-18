@@ -4,23 +4,22 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"fmt"
+	"github.com/go-vgo/robotgo"
 	"os"
 	"time"
-
-	"github.com/go-vgo/robotgo"
 )
+
+type Session struct {
+	ID        string
+	User      User
+	ExpiresAt time.Time
+}
 
 type User struct {
 	Name       string
 	Password   string
 	Role       string
 	IsLoggedIn bool
-}
-
-type Session struct {
-	ID        string
-	User      User
-	ExpiresAt time.Time
 }
 
 func authenticateUser() (User, error) {
@@ -31,14 +30,16 @@ func authenticateUser() (User, error) {
 	fmt.Print("Ingrese su contraseña: ")
 	fmt.Scanln(&password)
 
+	isValidCredentials := true
 	if isValidCredentials {
+
 		sessionID := generateSessionID()
 		session := Session{
 			ID:        sessionID,
 			User:      User{Name: username, Password: password, Role: "admin"}, // Asignar rol de administrador
 			ExpiresAt: time.Now().Add(time.Minute * 10),                        // Sesión válida por 10 minutos
 		}
-		return session, nil
+		return session.User, nil
 	}
 
 	return User{}, fmt.Errorf("Credenciales inválidas")
@@ -66,31 +67,32 @@ func createFile(fileName string) {
 		return
 	}
 	defer file.Close()
-
-	robotgo.StartCapture()
-	defer robotgo.EndCapture()
+	//robotgo.Capture()
+	//defer robotgo.EndCapture()
 
 	fmt.Print("Ingrese el texto para el archivo: ")
 	var text string
 	fmt.Scanln(&text)
 
 	for _, char := range text {
-		robotgo.KeyStroke(string(char))
+		robotgo.KeyPress(string(char))
+		fmt.Println(string(char))
 		file.Write([]byte(string(char)))
 	}
 
-	events := robotgo.GetEvents()
+	//events := robotgo.GetEvents()
 
-	for _, event := range events {
+	//for _, event := range events {
 
-		fmt.Println("Pulsación:", event.Type, event.Key, event.X, event.Y)
-	}
+	//fmt.Println("Pulsación:", event.Type, event.Key, event.X, event.Y)
+	//}
 
 }
 
 func main() {
 
 	session, err := authenticateUser()
+
 	if err != nil {
 		fmt.Println("Error de autenticación:", err)
 		os.Exit(1)
@@ -99,7 +101,7 @@ func main() {
 	for {
 
 		fmt.Println("\nMenú:")
-		if session.User.Role == "admin" {
+		if session.Role == "admin" {
 			fmt.Println("1. Crear archivo de texto")
 			fmt.Println("2. Generar informe")
 			fmt.Println("3. Salir")
@@ -116,7 +118,7 @@ func main() {
 
 		switch option {
 		case 1:
-			if session.User.Role == "admin" {
+			if session.Role == "admin" {
 				var fileName string
 				fmt.Print("Ingrese el nombre del archivo: ")
 				fmt.Scanln(&fileName)
@@ -125,7 +127,7 @@ func main() {
 				fmt.Println("Opción no disponible para este rol")
 			}
 		case 2:
-			if session.User.Role == "admin" {
+			if session.Role == "admin" {
 
 			} else {
 				fmt.Println("Opción no disponible para este rol")
@@ -137,9 +139,9 @@ func main() {
 			fmt.Println("Opción inválida")
 		}
 
-		if time.Now().After(session.ExpiresAt) {
-			fmt.Println("Sesión expirada. Inicie sesión nuevamente")
-			break
-		}
+		//if time.Now().After(session.ExpiresAt) {
+		//fmt.Println("Sesión expirada. Inicie sesión nuevamente")
+		//break
+		//}
 	}
 }
